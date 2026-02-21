@@ -111,7 +111,6 @@ function renderStarterPackageJson(projectName: string): string {
         '@modelcontextprotocol/server':
           'file:vendor/mcp-sdk-v2/modelcontextprotocol-server-2.0.0-alpha.0.tgz',
         express: '^5.2.1',
-        hono: '^4.11.4',
         zod: '^4.3.5',
       },
       devDependencies: {
