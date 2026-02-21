@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-02-21 - Documentation IA and quality reorganization
+
+### Documentation improvements
+
+- Reorganized documentation into a clearer information architecture:
+  - `README.md` as concise entry point
+  - `docs/README.md` as docs hub with reading order and index
+  - focused guides for SDK model, CLI workflow, and stateless architecture
+- Standardized tone, section ordering, and navigation links across all docs pages.
+- Tightened command examples and validation instructions for easier copy/paste usage.
+
 ## 2026-02-21 - Docs rewrite and scaffold CLI re-validation
 
 ### Documentation

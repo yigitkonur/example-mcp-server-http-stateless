@@ -1,38 +1,59 @@
-# HTTP Stateless Architecture Notes
+# HTTP Stateless Architecture
 
-## Runtime pattern in this repository
+Back to docs hub: `docs/README.md`  
+Back to repository guide: `../README.md`
 
-For each `POST /mcp` request:
+## Design Goal
 
-1. create fresh `McpServer`
-2. create fresh `NodeStreamableHTTPServerTransport` with `sessionIdGenerator: undefined`
-3. connect server to transport
-4. handle request
-5. close transport and server
+Provide a clear, production-friendly baseline for **HTTP stateless MCP** where each request is isolated and independently executable.
 
-This avoids request-to-request server state coupling.
+## Request Lifecycle (`POST /mcp`)
 
-## Why stateless
+For every incoming MCP request:
 
-- simple horizontal scaling model
-- no session affinity requirements
-- predictable request isolation
+1. create a fresh `McpServer` instance
+2. create a fresh `NodeStreamableHTTPServerTransport` with `sessionIdGenerator: undefined`
+3. connect server and transport
+4. process request through `transport.handleRequest(...)`
+5. close both transport and server on completion/connection close
 
-## Trade-offs
+This ensures no request-to-request in-memory coupling.
 
-- no resumability or replay in stateless mode
-- no in-memory multi-step session workflow
-- durable background workflows require external systems
+## Endpoint Contract
 
-## Endpoint behavior in this repository
+- `POST /mcp`
+  - MCP JSON-RPC request handling
+- `GET /mcp`
+  - explicit `405` (method not allowed)
+- `DELETE /mcp`
+  - explicit `405` (method not allowed)
+- `GET /health`
+  - service liveness and mode metadata
 
-- `POST /mcp`: MCP request handling
-- `GET /mcp`: explicit `405`
-- `DELETE /mcp`: explicit `405`
-- `GET /health`: health payload
+## Why This Stateless Pattern
 
-## Current known constraint
+- no session affinity requirement for scaling
+- predictable isolation and cleanup
+- easier deployment behind load balancers and serverless edges
 
-`exactOptionalPropertyTypes` is disabled in this repository due current v2 alpha typing friction around optional transport handler fields.
+## Trade-offs and Mitigations
 
-Revisit this flag once upstream typings stabilize.
+- No resumability/replay in stateless mode
+  - use stateful mode + durable event store if resumability is required
+- No in-memory multi-step workflows
+  - externalize workflow state to DB/queue/task system
+- Long-running tasks are not request-bound
+  - queue async work and return progress/status via external task model
+
+## Hardening Considerations
+
+- Keep rate limiting on `/mcp`
+- Keep CORS policy explicit per environment
+- Keep host-header/DNS-rebinding policy explicit at middleware/runtime layer
+- Keep error responses sanitized for production
+
+## Current Typing Constraint
+
+`exactOptionalPropertyTypes` remains disabled in this repository due current SDK v2 alpha typing friction around optional transport handler fields.
+
+Revisit this flag as upstream typings stabilize.

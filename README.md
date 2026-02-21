@@ -1,35 +1,41 @@
 # MCP HTTP Stateless Boilerplate (TypeScript SDK v2) + Scaffold CLI
 
-## Changelog (Latest First)
+Learning-first MCP starter focused on **HTTP stateless servers** with the official **TypeScript SDK v2 pre-release** model.
 
-- **2026-02-21:** Major rewrite completed for upcoming MCP TypeScript SDK v2 (pre-release), including full v1 removal, stateless transport rewrite, starter CLI, smoke tests, and docs overhaul.
-- Full historical details: `CHANGELOG.md`.
+## Documentation
 
-## What this repository is
+- Full docs hub: `docs/README.md`
+- SDK v2 model and migration framing: `docs/V2_SDK_OVERVIEW.md`
+- CLI usage and scaffolding workflow: `docs/CLI_SCAFFOLDER.md`
+- Runtime lifecycle and stateless design notes: `docs/HTTP_STATELESS_ARCHITECTURE.md`
+- Release history: `CHANGELOG.md`
 
-This project is a learning-first boilerplate for building **HTTP stateless MCP servers** with the upcoming **TypeScript SDK v2 API model**.
+## What This Repository Includes
 
-It includes two things together:
+1. A runnable stateless server reference:
+   - `src/server.ts`
+   - `src/mcpServer.ts`
+2. A project starter / generator CLI:
+   - `src/cli.ts`
+3. Pinned SDK v2 pre-release tarballs for reproducibility:
+   - `vendor/mcp-sdk-v2/*`
 
-1. A runnable stateless MCP server reference (`src/server.ts`, `src/mcpServer.ts`).
-2. A scaffold CLI (`src/cli.ts`) to generate new starter projects and new primitive stubs.
+## SDK v2 Context
 
-## MCP SDK v2 context (important)
-
-As of **February 21, 2026**, SDK v2 is still in pre-release/main-branch state in official docs context.
-
-This repo intentionally follows v2 primitives now:
+As of **February 21, 2026**, this repository tracks SDK v2 in pre-release/main-branch form and intentionally uses:
 
 - `McpServer` from `@modelcontextprotocol/server`
 - `NodeStreamableHTTPServerTransport` from `@modelcontextprotocol/node`
 - `createMcpExpressApp` from `@modelcontextprotocol/express`
 - `registerTool`, `registerResource`, `registerPrompt`
 - `ProtocolError`, `ProtocolErrorCode`
-- Zod v4 schemas (`zod/v4`)
+- Zod v4 (`zod/v4`)
 
-Because v2 package publication/distribution is still evolving, this boilerplate pins known-good v2 tarballs in `vendor/mcp-sdk-v2` and tracks their source commit in `vendor/mcp-sdk-v2/PINNED_SDK_COMMIT.txt`.
+The server and generated starter projects use explicit stateless transport:
 
-## Quick start
+- `NodeStreamableHTTPServerTransport({ sessionIdGenerator: undefined })`
+
+## Quick Start
 
 ```bash
 git clone https://github.com/yigitkonur/example-mcp-stateless.git
@@ -38,23 +44,26 @@ npm install
 npm run dev
 ```
 
-Endpoints:
+Default endpoints:
 
 - MCP: `http://127.0.0.1:1071/mcp`
 - Health: `http://127.0.0.1:1071/health`
 
-## Scaffold creator CLI
+## Scaffold CLI
 
-The CLI is shipped in this repo as `mcp-stateless-starter` (`dist/cli.js` after build).
-
-### Create a new project
+Build CLI first:
 
 ```bash
 npm run build
+```
+
+Create a new project:
+
+```bash
 npm run cli -- init my-mcp-server --install
 ```
 
-### Generate new stubs in an existing project
+Generate stubs inside a project:
 
 ```bash
 npm run create -- generate tool my_tool
@@ -62,31 +71,9 @@ npm run create -- generate resource my_resource
 npm run create -- generate prompt my_prompt
 ```
 
-### Verified status
+See full command guide in `docs/CLI_SCAFFOLDER.md`.
 
-This CLI flow was verified end-to-end during this rewrite:
-
-1. `init --install` created a new project with v2 vendor artifacts.
-2. Generated project built successfully.
-3. Generated project was started and responded to a live MCP tool call (`hello`) on `/mcp`.
-
-Generated project structure (excluding `node_modules`):
-
-```text
-my-mcp-generated/
-  .gitignore
-  README.md
-  package.json
-  tsconfig.json
-  src/server.ts
-  vendor/mcp-sdk-v2/
-    PINNED_SDK_COMMIT.txt
-    modelcontextprotocol-server-2.0.0-alpha.0.tgz
-    modelcontextprotocol-node-2.0.0-alpha.0.tgz
-    modelcontextprotocol-express-2.0.0-alpha.0.tgz
-```
-
-## Current example primitives in this repo
+## Included Example Primitives
 
 Tools:
 
@@ -102,23 +89,9 @@ Prompt:
 
 - `design-next-tool`
 
-## Stateless-only scope and limitations
+## Validation
 
-This boilerplate intentionally focuses on HTTP stateless mode:
-
-- no session continuity across requests
-- no resumability/event replay in this mode
-- no in-memory session workflows
-- long-running workflows should use durable external systems
-
-Additional v2 constraints:
-
-- server-side legacy SSE transport removed
-- server-side auth helpers removed from SDK scope
-- host header and DNS rebinding hardening should be handled by middleware/runtime policy
-- `exactOptionalPropertyTypes` is disabled here due current v2 alpha typing friction around optional transport handler fields
-
-## Validation commands
+Primary checks:
 
 ```bash
 npm run build
@@ -127,11 +100,7 @@ npm run smoke
 npm run ci
 ```
 
-`npm run smoke` runs a real MCP call against the built server.
-
-### `mcp-cli` verification (manual)
-
-Create `mcp_servers.json`:
+`mcp-cli` verification example:
 
 ```json
 {
@@ -143,8 +112,6 @@ Create `mcp_servers.json`:
 }
 ```
 
-Then run:
-
 ```bash
 MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json
 MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json info stateless-main
@@ -153,29 +120,34 @@ MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json call stateless-main calculate '{"a":
 MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json call stateless-main calculate '{"a":"bad","b":3,"op":"add"}'
 ```
 
-Notes:
+For prompts/resources/templates checks, use direct JSON-RPC calls to `POST /mcp` (current `mcp-cli` is tool-centric).
 
-- `mcp-cli` currently exposes tool-centric commands (`info`, `call`, `grep`).
-- prompts/resources/templates can be validated using direct MCP JSON-RPC calls to `POST /mcp`.
+## Scope and Limits
 
-## SDK tarball refresh
+This project intentionally focuses on **HTTP stateless MCP**:
 
-If you have a local checkout of official SDK `main`:
+- no server-managed session continuity
+- no resumability/event replay in this mode
+- no in-memory multi-step workflows
+- long-running workflows should use durable external systems
+
+Additional SDK v2 constraints:
+
+- server-side legacy SSE transport removed
+- server-side auth helpers removed from SDK scope
+- host header and DNS rebinding policy should be enforced by middleware/runtime setup
+
+## Refreshing Pinned SDK Tarballs
+
+If you have a local checkout of the official SDK main branch:
 
 ```bash
 npm run refresh:sdk-v2 -- ../typescript-sdk
 ```
 
-This repacks server/node/express tarballs and updates pinned commit metadata.
+This repacks server/node/express tarballs and updates `vendor/mcp-sdk-v2/PINNED_SDK_COMMIT.txt`.
 
-## Documentation index
-
-- `docs/README.md`
-- `docs/V2_SDK_OVERVIEW.md`
-- `docs/CLI_SCAFFOLDER.md`
-- `docs/HTTP_STATELESS_ARCHITECTURE.md`
-
-## Official references
+## Official SDK References
 
 - https://github.com/modelcontextprotocol/typescript-sdk/blob/main/README.md
 - https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/server.md

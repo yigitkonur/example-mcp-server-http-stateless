@@ -1,34 +1,64 @@
-# MCP TypeScript SDK v2 Overview for This Boilerplate
+# SDK v2 Overview (This Boilerplate)
 
-## Why v2 matters here
+Back to docs hub: `docs/README.md`  
+Back to repository guide: `../README.md`
 
-This boilerplate adopts the v2 shape now so teams can learn and build around the future model instead of v1 compatibility layers.
+## Purpose
 
-Key v2-facing differences used in this project:
+This repository is a **v2-first MCP learning baseline**.  
+It is designed to teach and scaffold against the upcoming TypeScript SDK v2 model, not v1 compatibility patterns.
 
-- package split (`@modelcontextprotocol/server`, `@modelcontextprotocol/node`, `@modelcontextprotocol/express`)
-- registration API (`registerTool`, `registerResource`, `registerPrompt`)
-- protocol error model (`ProtocolError`, `ProtocolErrorCode`)
-- request context model (`ctx.mcpReq.*`)
-- Zod v4 schema expectations
+## v2 Model Used Here
 
-## v2 pre-release reality
+Core packages:
 
-As of **February 21, 2026**, this repository treats SDK v2 as pre-release/main-branch workflow context and pins vendor tarballs under `vendor/mcp-sdk-v2`.
+- `@modelcontextprotocol/server`
+- `@modelcontextprotocol/node`
+- `@modelcontextprotocol/express`
 
-Why:
+Core server APIs:
 
-- stable reproducibility for this learning boilerplate
-- fast local bootstrap for generated starter projects
-- commit-level traceability via `PINNED_SDK_COMMIT.txt`
+- `registerTool`
+- `registerPrompt`
+- `registerResource`
+- `NodeStreamableHTTPServerTransport({ sessionIdGenerator: undefined })` for explicit stateless mode
 
-## What was removed from v1-style patterns
+Core error model:
 
-- no `@modelcontextprotocol/sdk` package usage
-- no `.tool()`, `.resource()`, `.prompt()` calls
+- `ProtocolError`
+- `ProtocolErrorCode`
+
+Core schema model:
+
+- Zod v4 with explicit `z.object(...)` wrappers for tool/prompt schemas
+
+## v1 Concepts Intentionally Removed
+
+- no `@modelcontextprotocol/sdk` package imports
+- no `.tool()`, `.prompt()`, `.resource()` variadic APIs
 - no `McpError` / `ErrorCode` usage
-- no server-side SSE legacy transport path
+- no server-side legacy SSE transport path
 
-## Practical recommendation
+## Pre-release Reality and Pinning Strategy
 
-Treat this repository as a v2 learning baseline and keep production risk controls explicit while v2 APIs continue evolving.
+As of **February 21, 2026**, v2 is treated as pre-release/main-branch workflow context.  
+To keep this starter stable and reproducible, the repository vendors tarballs under:
+
+- `vendor/mcp-sdk-v2/`
+
+The pinned upstream commit is tracked in:
+
+- `vendor/mcp-sdk-v2/PINNED_SDK_COMMIT.txt`
+
+Refresh command:
+
+```bash
+npm run refresh:sdk-v2 -- ../typescript-sdk
+```
+
+## Practical Implementation Notes
+
+- Keep transport config explicit for stateless mode.
+- Keep request handling per-request (new server + new transport each POST).
+- Keep docs and examples synchronized with official SDK migration/server docs.
+- Re-run `npm run ci` after SDK tarball refresh or API-facing edits.

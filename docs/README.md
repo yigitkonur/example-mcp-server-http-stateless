@@ -1,21 +1,45 @@
-# Documentation
+# Documentation Hub
 
-## Changelog (Latest First)
+This folder contains the learning and operational docs for this MCP boilerplate.
 
-- **2026-02-21:** Documentation rewritten from scratch for v2 rewrite and scaffold CLI verification.
-- See full release notes in `../CHANGELOG.md`.
+- Repository overview and quick start: `../README.md`
+- Release history: `../CHANGELOG.md`
 
-## Start here
+## Recommended Reading Order
 
-1. Read `../README.md` for quick start and verified commands.
-2. Read `V2_SDK_OVERVIEW.md` for SDK v2 model and migration framing.
-3. Read `CLI_SCAFFOLDER.md` to create or extend projects quickly.
-4. Read `HTTP_STATELESS_ARCHITECTURE.md` for transport lifecycle and limitations.
+1. `../README.md`  
+   Use this for setup, first run, and local verification commands.
+2. `V2_SDK_OVERVIEW.md`  
+   Understand what changed in SDK v2 and which v2 patterns this project enforces.
+3. `HTTP_STATELESS_ARCHITECTURE.md`  
+   Learn the request lifecycle, stateless guarantees, and trade-offs.
+4. `CLI_SCAFFOLDER.md`  
+   Generate starter projects and primitive stubs with the built-in CLI.
 
-## Scope
+## Document Index
 
-This documentation covers only:
+### `V2_SDK_OVERVIEW.md`
 
-- MCP TypeScript SDK v2-oriented primitives
-- HTTP stateless transport setup
-- starter/scaffold workflow in this repository
+- v2 package model and API shifts used in this repo
+- v1 concepts intentionally removed
+- practical migration and implementation notes
+
+### `HTTP_STATELESS_ARCHITECTURE.md`
+
+- per-request server/transport lifecycle
+- endpoint behavior and cleanup model
+- stateless trade-offs and mitigation guidance
+
+### `CLI_SCAFFOLDER.md`
+
+- CLI command reference (`init`, `generate`)
+- generated project layout
+- validation and troubleshooting workflow
+
+## Scope of This Documentation
+
+- MCP TypeScript SDK v2-oriented implementation
+- HTTP stateless transport only
+- starter CLI and generated project workflow
+
+Stateful/SSE/server-side OAuth flows are intentionally out of scope in this repository.
