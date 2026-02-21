@@ -1,155 +1,188 @@
-stateless HTTP transport for MCP. every request gets a fresh server instance — no sessions, no state, no coordination between replicas. deploy it as a serverless function, behind a load balancer, or scale horizontally without thinking about it.
+# MCP HTTP Stateless Boilerplate (TypeScript SDK v2) + Scaffold CLI
 
-uses a calculator domain as the example, but the point is the architecture, not the math.
+## Changelog (Latest First)
 
-```bash
-npm run dev
-# listening on http://localhost:1071
-```
+- **2026-02-21:** Major rewrite completed for upcoming MCP TypeScript SDK v2 (pre-release), including full v1 removal, stateless transport rewrite, starter CLI, smoke tests, and docs overhaul.
+- Full historical details: `CHANGELOG.md`.
 
-[![node](https://img.shields.io/badge/node-20+-93450a.svg?style=flat-square)](https://nodejs.org/)
-[![typescript](https://img.shields.io/badge/typescript-5.7-93450a.svg?style=flat-square)](https://www.typescriptlang.org/)
-[![license](https://img.shields.io/badge/license-MIT-grey.svg?style=flat-square)](https://opensource.org/licenses/MIT)
+## What this repository is
 
-> **series:** [STDIO](https://github.com/yigitkonur/example-mcp-server-stdio) | [stateful HTTP](https://github.com/yigitkonur/example-mcp-server-streamable-http) | **stateless HTTP** | [SSE](https://github.com/yigitkonur/example-mcp-server-sse)
+This project is a learning-first boilerplate for building **HTTP stateless MCP servers** with the upcoming **TypeScript SDK v2 API model**.
 
----
+It includes two things together:
 
-## what it does
+1. A runnable stateless MCP server reference (`src/server.ts`, `src/mcpServer.ts`).
+2. A scaffold CLI (`src/cli.ts`) to generate new starter projects and new primitive stubs.
 
-- **fresh instance per request** — new `McpServer` + `StreamableHTTPServerTransport` on every call, torn down when the response closes
-- **no session management** — `sessionIdGenerator: undefined` tells the SDK to run stateless
-- **DNS rebinding protection** — delegated to the SDK transport, not hand-rolled middleware
-- **structured JSON logging** — immutable context-chaining logger, per-request `requestId` correlation
-- **prometheus metrics** — request duration histograms (p50/p95/p99), per-tool execution time, memory gauges
-- **rate limiting** — per-IP via `express-rate-limit`, configurable window and max
-- **CORS** — preflight cached 24h, MCP protocol headers whitelisted
-- **graceful shutdown** — SIGTERM/SIGINT handlers, clean server close
-- **progress streaming** — tools can emit `notifications/progress` over SSE via `GET /mcp`
+## MCP SDK v2 context (important)
 
-## endpoints
+As of **February 21, 2026**, SDK v2 is still in pre-release/main-branch state in official docs context.
 
-| method | path | what it does |
-|:---|:---|:---|
-| `POST` | `/mcp` | MCP JSON-RPC requests (tools, resources, prompts) |
-| `GET` | `/mcp` | SSE stream for progress notifications |
-| `DELETE` | `/mcp` | returns 405 — sessions don't exist here |
-| `GET` | `/health` | basic health check |
-| `GET` | `/health/detailed` | system info, config, scaling characteristics |
-| `GET` | `/metrics` | prometheus text format |
+This repo intentionally follows v2 primitives now:
 
-## tools
+- `McpServer` from `@modelcontextprotocol/server`
+- `NodeStreamableHTTPServerTransport` from `@modelcontextprotocol/node`
+- `createMcpExpressApp` from `@modelcontextprotocol/express`
+- `registerTool`, `registerResource`, `registerPrompt`
+- `ProtocolError`, `ProtocolErrorCode`
+- Zod v4 schemas (`zod/v4`)
 
-| name | parameters | description |
-|:---|:---|:---|
-| `calculate` | `a`, `b`, `op` (add/subtract/multiply/divide), `stream?`, `precision?` | arithmetic with optional SSE progress notifications |
-| `demo_progress` | none | sends 5 progress events at 200ms intervals |
+Because v2 package publication/distribution is still evolving, this boilerplate pins known-good v2 tarballs in `vendor/mcp-sdk-v2` and tracks their source commit in `vendor/mcp-sdk-v2/PINNED_SDK_COMMIT.txt`.
 
-set `SAMPLE_TOOL_NAME` env var to register a dynamic echo tool at runtime.
-
-## resources
-
-| URI | description |
-|:---|:---|
-| `calculator://constants` | pi and e |
-| `calculator://history/{id}` | intentionally throws — demonstrates stateless incompatibility |
-| `calculator://stats` | uptime, timestamp, pattern |
-| `formulas://library` | 10 math formulas with category and description |
-| `request://current` | per-request metadata: request ID, process info, memory usage |
-
-## prompts
-
-| name | parameters | description |
-|:---|:---|:---|
-| `explain-calculation` | `calculation`, `level?` | step-by-step explanation at basic/intermediate/advanced |
-| `generate-problems` | `topic`, `difficulty?`, `count?` | practice problems with answer key |
-| `calculator-tutor` | `topic?`, `studentLevel?` | tutoring persona that uses the `calculate` tool |
-
-## install
+## Quick start
 
 ```bash
 git clone https://github.com/yigitkonur/example-mcp-server-http-stateless.git
 cd example-mcp-server-http-stateless
 npm install
+npm run dev
 ```
 
-### run
+Endpoints:
+
+- MCP: `http://127.0.0.1:1071/mcp`
+- Health: `http://127.0.0.1:1071/health`
+
+## Scaffold creator CLI
+
+The CLI is shipped in this repo as `mcp-stateless-starter` (`dist/cli.js` after build).
+
+### Create a new project
 
 ```bash
-npm run dev                 # hot-reload via tsx
-npm run build && npm start  # compiled production
+npm run build
+npm run cli -- init my-mcp-server --install
 ```
 
-### docker
+### Generate new stubs in an existing project
 
 ```bash
-npm run docker:build && npm run docker:up   # production
-npm run docker:dev                          # dev with volume mounts
-npm run docker:logs                         # tail logs
-npm run docker:down                         # stop
+npm run create -- generate tool my_tool
+npm run create -- generate resource my_resource
+npm run create -- generate prompt my_prompt
 ```
 
-multi-stage alpine build — dev deps and source excluded from production image.
+### Verified status
 
-### test with MCP inspector
+This CLI flow was verified end-to-end during this rewrite:
+
+1. `init --install` created a new project with v2 vendor artifacts.
+2. Generated project built successfully.
+3. Generated project was started and responded to a live MCP tool call (`hello`) on `/mcp`.
+
+Generated project structure (excluding `node_modules`):
+
+```text
+my-mcp-generated/
+  .gitignore
+  README.md
+  package.json
+  tsconfig.json
+  src/server.ts
+  vendor/mcp-sdk-v2/
+    PINNED_SDK_COMMIT.txt
+    modelcontextprotocol-server-2.0.0-alpha.0.tgz
+    modelcontextprotocol-node-2.0.0-alpha.0.tgz
+    modelcontextprotocol-express-2.0.0-alpha.0.tgz
+```
+
+## Current example primitives in this repo
+
+Tools:
+
+- `calculate`
+- `describe_stateless_limits`
+
+Resources:
+
+- `boilerplate://limitations`
+- `boilerplate://topic/{topic}`
+
+Prompt:
+
+- `design-next-tool`
+
+## Stateless-only scope and limitations
+
+This boilerplate intentionally focuses on HTTP stateless mode:
+
+- no session continuity across requests
+- no resumability/event replay in this mode
+- no in-memory session workflows
+- long-running workflows should use durable external systems
+
+Additional v2 constraints:
+
+- server-side legacy SSE transport removed
+- server-side auth helpers removed from SDK scope
+- host header and DNS rebinding hardening should be handled by middleware/runtime policy
+- `exactOptionalPropertyTypes` is disabled here due current v2 alpha typing friction around optional transport handler fields
+
+## Validation commands
 
 ```bash
-npx @modelcontextprotocol/inspector --cli http://localhost:1071/mcp
+npm run build
+npm run check
+npm run smoke
+npm run ci
 ```
 
-### manual curl
+`npm run smoke` runs a real MCP call against the built server.
+
+### `mcp-cli` verification (manual)
+
+Create `mcp_servers.json`:
+
+```json
+{
+  "mcpServers": {
+    "stateless-main": {
+      "url": "http://127.0.0.1:1071/mcp"
+    }
+  }
+}
+```
+
+Then run:
 
 ```bash
-curl -X POST http://localhost:1071/mcp \
-  -H "Content-Type: application/json" \
-  -H "Accept: application/json, text/event-stream" \
-  -d '{"jsonrpc":"2.0","method":"tools/call","params":{"name":"calculate","arguments":{"a":15,"b":7,"op":"add"}},"id":1}'
+MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json
+MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json info stateless-main
+MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json info stateless-main calculate
+MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json call stateless-main calculate '{"a":8,"b":3,"op":"add","precision":2}'
+MCP_NO_DAEMON=1 mcp-cli -c mcp_servers.json call stateless-main calculate '{"a":"bad","b":3,"op":"add"}'
 ```
 
-## configuration
+Notes:
 
-all env vars, no config files.
+- `mcp-cli` currently exposes tool-centric commands (`info`, `call`, `grep`).
+- prompts/resources/templates can be validated using direct MCP JSON-RPC calls to `POST /mcp`.
 
-| variable | default | description |
-|:---|:---|:---|
-| `PORT` | `1071` | listen port |
-| `CORS_ORIGIN` | `*` | allowed origin. restrict in production |
-| `LOG_LEVEL` | `info` | debug, info, warn, error |
-| `RATE_LIMIT_MAX` | `1000` | max requests per IP per window |
-| `RATE_LIMIT_WINDOW` | `900000` | rate limit window in ms (15 min) |
-| `ENABLE_METRICS` | `true` | set to `false` to disable |
-| `SAMPLE_TOOL_NAME` | — | if set, registers a dynamic echo tool with this name |
+## SDK tarball refresh
 
-## project structure
+If you have a local checkout of official SDK `main`:
 
-```
-src/
-  types.ts    — zod schemas, constants, type definitions. no logic, no side effects
-  server.ts   — express app, MCP server factory, route handlers, lifecycle
+```bash
+npm run refresh:sdk-v2 -- ../typescript-sdk
 ```
 
-two files. `types.ts` is the stable contract, `server.ts` is all runtime behavior. the separation is intentional.
+This repacks server/node/express tarballs and updates pinned commit metadata.
 
-## the stateless pattern
+## Documentation index
 
-the core of this repo is one function. for every HTTP request:
+- `docs/README.md`
+- `docs/V2_SDK_OVERVIEW.md`
+- `docs/CLI_SCAFFOLDER.md`
+- `docs/HTTP_STATELESS_ARCHITECTURE.md`
 
-1. create a new `McpServer` instance
-2. create a new `StreamableHTTPServerTransport` with no session ID generator
-3. connect them
-4. let the SDK handle the JSON-RPC request
-5. close both when the response stream ends
+## Official references
 
-no global state, no session map, no cleanup jobs. the trade-off is that `calculator://history/{id}` deliberately throws — some resources are fundamentally incompatible with stateless operation, and the code demonstrates that explicitly.
+- https://github.com/modelcontextprotocol/typescript-sdk/blob/main/README.md
+- https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/server.md
+- https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/migration.md
+- https://github.com/modelcontextprotocol/typescript-sdk/blob/main/docs/faq.md
+- https://github.com/modelcontextprotocol/typescript-sdk/blob/main/examples/server/src/simpleStatelessStreamableHttp.ts
 
-## error handling
-
-three layers:
-
-- **middleware** — rate limiter and size guard return JSON-RPC errors before reaching the handler
-- **tool-level** — `McpError` with proper error codes (divide by zero, invalid params). SDK serializes these as JSON-RPC errors
-- **safety net** — catch-all in the request handler. logs the stack trace, returns generic 500. never leaks internals to the client
-
-## license
+## License
 
 MIT
